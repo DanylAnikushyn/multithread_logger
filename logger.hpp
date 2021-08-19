@@ -13,17 +13,19 @@ extern thread_local int indent;
 
 const std::string currentDateTime();
 
-#define LOG(param) Logger::Message message(__FILE__, __FUNCTION__, __LINE__, param)
+#define LOG(param) Logger::Message(__FILE__, __FUNCTION__, __LINE__, param)
 #define INCREASE_INDENT (++indent)
+#define DECREASE_INDENT (--indent)
 
 class Logger
 {
 public:
-    static void init(const char* filename);
     static Logger& get();
-    static void destroy();
+public:
+    void setOptions(std::string, std::size_t queue_size);
     void log(const std::string &message);
-
+    ~Logger();
+public:
     class Message
     {
     public:
@@ -39,12 +41,13 @@ public:
 private:
     Logger(const std::string& filename, std::size_t queue_size);
     void write();
-    static std::unique_ptr<Logger> m_instance;
-    static std::thread m_thread;
-    static std::condition_variable m_cv;
-    static bool alive;
+private:
+    static std::string m_filename;
+    static std::size_t m_queue_size;
+    std::thread m_thread;
+    std::condition_variable m_cv;
+    bool alive = true;
     std::deque<std::string> m_messages;
-    std::size_t m_queue_size;
     std::mutex m_mutex;
     std::ofstream m_out;
 };
